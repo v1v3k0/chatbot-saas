@@ -1,54 +1,63 @@
 # P2P Lending Platform
 
-A production-ready, full-stack Peer-to-Peer (P2P) lending platform built with Next.js, Supabase, and TypeScript. This platform enables users to register as borrowers or lenders, create loan requests, fund loans, and manage repayments with comprehensive financial calculations and security features.
+A production-ready, full-stack Peer-to-Peer (P2P) Lending Platform built with Next.js 14, Supabase, and TypeScript. This platform enables users to register as Borrowers or Lenders and facilitates secure loan transactions with automated interest calculations, credit scoring, and comprehensive dashboards.
 
 ## 🚀 Features
 
-### Core Functionalities
-- **Authentication & Authorization**: Secure email/password signup/login with Supabase Auth
-- **Role-based Access**: Borrower or Lender roles with appropriate permissions
-- **Loan Management**: Create, fund, and track loans with real-time status updates
-- **Repayment System**: Automated interest calculations and payment tracking
-- **Credit Scoring**: Dynamic credit score calculation based on repayment history
-- **Notifications**: Real-time alerts for payments, funding, and important events
-- **Mobile Responsive**: Optimized for all device sizes
+### Core Functionality
+- **🔐 Authentication & Authorization**: Secure email/password authentication with role-based access (Borrower/Lender)
+- **💰 Loan Management**: Create, fund, and track loans with automated status updates
+- **📊 Interest Calculations**: Dynamic interest calculation with early/late payment handling
+- **🎯 Credit Scoring**: Automated credit score calculation based on repayment history
+- **📱 Real-time Updates**: Live notifications and status updates using Supabase real-time
+- **📈 Comprehensive Dashboards**: Role-specific dashboards with financial overviews
+- **🔒 Security**: Row Level Security (RLS), input validation, and secure API endpoints
 
 ### Advanced Features
-- **Interest Calculations**: Dynamic interest calculation with early/late payment handling
-- **Risk Assessment**: Automated risk level calculation for loan requests
-- **Portfolio Management**: Comprehensive dashboard for lenders and borrowers
-- **Transaction History**: Complete audit trail of all financial transactions
-- **PDF Generation**: Download loan summaries and statements
-- **Real-time Updates**: Live updates using Supabase real-time subscriptions
+- **📧 Notifications System**: Email and in-app notifications for important events
+- **📄 PDF Generation**: Download loan summaries and statements
+- **🎨 Mobile Responsive**: Beautiful, responsive design that works on all devices
+- **⚡ Performance Optimized**: Optimized queries, caching, and lazy loading
+- **🔄 Automated Workflows**: Edge Functions for overdue loan processing and payment reminders
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Backend**: Supabase (PostgreSQL, Auth, Functions, Storage)
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Data Fetching**: React Query (TanStack Query)
-- **Form Handling**: React Hook Form with Zod validation
-- **Icons**: Lucide React
-- **Charts**: Recharts
-- **PDF Generation**: jsPDF, html2canvas
-- **Deployment**: Vercel (Frontend), Supabase (Backend)
+### Frontend
+- **Next.js 14** with App Router
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **Zustand** for state management
+- **React Query** for data fetching
+- **React Hook Form** with Zod validation
+
+### Backend
+- **Supabase** (PostgreSQL, Auth, Real-time, Storage)
+- **Supabase Edge Functions** for serverless functions
+- **Row Level Security (RLS)** for data protection
+- **PostgreSQL Triggers** for automated updates
+
+### Development & Deployment
+- **TypeScript** for type safety
+- **ESLint** for code quality
+- **Jest** for testing
+- **GitHub Actions** for CI/CD
+- **Vercel** for frontend hosting
+- **Supabase** for backend hosting
 
 ## 📋 Prerequisites
 
-Before running this project, make sure you have:
-
-- Node.js 18+ installed
-- npm or yarn package manager
-- A Supabase account and project
-- Git installed
+Before you begin, ensure you have the following installed:
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **Git**
+- **Supabase CLI** (for local development)
 
 ## 🚀 Quick Start
 
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/yourusername/p2p-lending-platform.git
 cd p2p-lending-platform
 ```
 
@@ -56,19 +65,15 @@ cd p2p-lending-platform
 
 ```bash
 npm install
-# or
-yarn install
 ```
 
 ### 3. Set Up Environment Variables
-
-Create a `.env.local` file in the root directory:
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Fill in your Supabase credentials:
+Update `.env.local` with your Supabase credentials:
 
 ```env
 # Supabase Configuration
@@ -86,10 +91,6 @@ SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 
-# Optional: Stripe Configuration (for future payment integration)
-STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_key
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret
-
 # Security
 JWT_SECRET=your_jwt_secret_key_here
 ENCRYPTION_KEY=your_encryption_key_here
@@ -97,171 +98,195 @@ ENCRYPTION_KEY=your_encryption_key_here
 
 ### 4. Set Up Supabase Database
 
-#### Create Supabase Project
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Get your project URL and anon key from the API settings
-3. Update your `.env.local` file with these values
+#### Option A: Using Supabase CLI (Recommended)
 
-#### Run Database Migrations
-Execute the following SQL in your Supabase SQL editor:
+1. **Install Supabase CLI**:
+   ```bash
+   npm install -g supabase
+   ```
 
-```sql
--- Enable necessary extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+2. **Initialize Supabase**:
+   ```bash
+   supabase init
+   ```
 
--- Create users table
-CREATE TABLE users (
-    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    role TEXT CHECK (role IN ('borrower', 'lender')) NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    phone TEXT,
-    avatar_url TEXT,
-    credit_score INTEGER DEFAULT 650,
-    total_borrowed DECIMAL(12,2) DEFAULT 0,
-    total_lent DECIMAL(12,2) DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+3. **Start local Supabase**:
+   ```bash
+   supabase start
+   ```
 
--- Create loan_requests table
-CREATE TABLE loan_requests (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    borrower_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    principal_amount DECIMAL(12,2) NOT NULL,
-    interest_rate DECIMAL(5,2) NOT NULL,
-    duration_days INTEGER NOT NULL,
-    purpose TEXT NOT NULL,
-    status TEXT CHECK (status IN ('open', 'partially_funded', 'fully_funded', 'settled', 'overdue', 'cancelled')) DEFAULT 'open',
-    funded_amount DECIMAL(12,2) DEFAULT 0,
-    due_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    category TEXT NOT NULL,
-    risk_level TEXT CHECK (risk_level IN ('low', 'medium', 'high')) DEFAULT 'medium',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+4. **Run database migrations**:
+   ```bash
+   supabase db push
+   ```
 
--- Create loan_fundings table
-CREATE TABLE loan_fundings (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    loan_request_id UUID REFERENCES loan_requests(id) ON DELETE CASCADE NOT NULL,
-    lender_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    amount DECIMAL(12,2) NOT NULL,
-    status TEXT CHECK (status IN ('pending', 'completed', 'cancelled')) DEFAULT 'pending',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+#### Option B: Using Supabase Dashboard
 
--- Create repayments table
-CREATE TABLE repayments (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    loan_request_id UUID REFERENCES loan_requests(id) ON DELETE CASCADE NOT NULL,
-    borrower_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    amount DECIMAL(12,2) NOT NULL,
-    principal_amount DECIMAL(12,2) NOT NULL,
-    interest_amount DECIMAL(12,2) NOT NULL,
-    payment_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    due_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    status TEXT CHECK (status IN ('pending', 'completed', 'overdue')) DEFAULT 'pending',
-    installment_number INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to the SQL Editor
+3. Copy and paste the contents of `supabase/migrations/001_initial_schema.sql`
+4. Execute the SQL to create all tables, indexes, and policies
 
--- Create transactions table
-CREATE TABLE transactions (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    type TEXT CHECK (type IN ('funding', 'repayment', 'interest_payment', 'fee')) NOT NULL,
-    amount DECIMAL(12,2) NOT NULL,
-    description TEXT NOT NULL,
-    reference_id UUID NOT NULL,
-    status TEXT CHECK (status IN ('pending', 'completed', 'failed')) DEFAULT 'pending',
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+### 5. Deploy Edge Functions
 
--- Create notifications table
-CREATE TABLE notifications (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    type TEXT CHECK (type IN ('info', 'success', 'warning', 'error')) DEFAULT 'info',
-    read BOOLEAN DEFAULT FALSE,
-    action_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create credit_scores table
-CREATE TABLE credit_scores (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    score INTEGER NOT NULL,
-    factors JSONB NOT NULL,
-    last_calculated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create indexes for better performance
-CREATE INDEX idx_loan_requests_borrower_id ON loan_requests(borrower_id);
-CREATE INDEX idx_loan_requests_status ON loan_requests(status);
-CREATE INDEX idx_loan_fundings_loan_request_id ON loan_fundings(loan_request_id);
-CREATE INDEX idx_loan_fundings_lender_id ON loan_fundings(lender_id);
-CREATE INDEX idx_repayments_loan_request_id ON repayments(loan_request_id);
-CREATE INDEX idx_transactions_user_id ON transactions(user_id);
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_credit_scores_user_id ON credit_scores(user_id);
-
--- Enable Row Level Security (RLS)
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE loan_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE loan_fundings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE repayments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE credit_scores ENABLE ROW LEVEL SECURITY;
-
--- Create RLS policies
--- Users can only see their own profile
-CREATE POLICY "Users can view own profile" ON users
-    FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile" ON users
-    FOR UPDATE USING (auth.uid() = id);
-
--- Loan requests policies
-CREATE POLICY "Anyone can view open loan requests" ON loan_requests
-    FOR SELECT USING (status IN ('open', 'partially_funded'));
-
-CREATE POLICY "Borrowers can view own loan requests" ON loan_requests
-    FOR SELECT USING (borrower_id = auth.uid());
-
-CREATE POLICY "Borrowers can create loan requests" ON loan_requests
-    FOR INSERT WITH CHECK (borrower_id = auth.uid());
-
-CREATE POLICY "Borrowers can update own loan requests" ON loan_requests
-    FOR UPDATE USING (borrower_id = auth.uid());
-
--- Add more policies as needed...
+```bash
+supabase functions deploy
 ```
 
-### 5. Run the Development Server
+### 6. Start Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-## 🏗️ Project Structure
+## 🗄️ Database Schema
+
+The application uses the following main tables:
+
+### Core Tables
+- **`users`**: User profiles with roles (borrower/lender)
+- **`loan_requests`**: Loan applications with status tracking
+- **`loan_fundings`**: Funding records for loans
+- **`repayments`**: Payment records with interest calculations
+- **`transactions`**: Financial transaction history
+- **`notifications`**: User notifications
+- **`credit_scores`**: Credit score tracking
+
+### Key Features
+- **Row Level Security (RLS)**: Ensures users can only access their own data
+- **Automated Triggers**: Updates loan status and user totals automatically
+- **Optimized Indexes**: Fast queries for large datasets
+- **Views**: Pre-built queries for common operations
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Test Structure
+- **Unit Tests**: Individual component and function tests
+- **Integration Tests**: API route and database interaction tests
+- **E2E Tests**: Full user workflow tests
+
+## 🚀 Deployment
+
+### Automated Deployment (Recommended)
+
+The project includes GitHub Actions for automated deployment:
+
+1. **Set up GitHub Secrets**:
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_ACCESS_TOKEN`
+   - `SUPABASE_PROJECT_REF`
+
+2. **Push to main branch**:
+   ```bash
+   git push origin main
+   ```
+
+The GitHub Actions workflow will automatically:
+- Run tests
+- Build the application
+- Deploy to Vercel (frontend)
+- Deploy to Supabase (backend)
+
+### Manual Deployment
+
+#### Deploy Frontend to Vercel
+
+1. **Install Vercel CLI**:
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Deploy**:
+   ```bash
+   vercel --prod
+   ```
+
+#### Deploy Backend to Supabase
+
+1. **Deploy database**:
+   ```bash
+   supabase db push
+   ```
+
+2. **Deploy Edge Functions**:
+   ```bash
+   supabase functions deploy
+   ```
+
+### Using Deployment Script
+
+The project includes a comprehensive deployment script:
+
+```bash
+# Deploy everything
+npm run deploy
+
+# Deploy only backend
+npm run deploy:backend
+
+# Deploy only frontend
+npm run deploy:frontend
+
+# Build only
+npm run deploy:build
+```
+
+## 🔧 Available Scripts
+
+### Development
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript type checking
+```
+
+### Testing
+```bash
+npm test             # Run tests
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Run tests with coverage
+```
+
+### Database
+```bash
+npm run db:migrate   # Deploy database migrations
+npm run db:reset     # Reset database
+npm run studio       # Open Supabase Studio
+```
+
+### Supabase
+```bash
+npm run supabase:start  # Start local Supabase
+npm run supabase:stop   # Stop local Supabase
+npm run functions:deploy # Deploy Edge Functions
+```
+
+## 📁 Project Structure
 
 ```
 p2p-lending-platform/
-├── app/                    # Next.js app directory
+├── app/                    # Next.js App Router
 │   ├── api/               # API routes
 │   ├── dashboard/         # Dashboard pages
 │   ├── globals.css        # Global styles
@@ -274,109 +299,129 @@ p2p-lending-platform/
 │   └── loans/            # Loan-related components
 ├── lib/                  # Utility libraries
 │   ├── supabase.ts       # Supabase client
-│   ├── store.ts          # Zustand store
+│   ├── store.ts          # Zustand stores
 │   └── validations.ts    # Zod schemas
-├── types/                # TypeScript type definitions
+├── supabase/             # Supabase configuration
+│   ├── functions/        # Edge Functions
+│   ├── migrations/       # Database migrations
+│   └── config.toml       # Supabase config
+├── types/                # TypeScript types
 ├── utils/                # Utility functions
-├── public/               # Static assets
-└── package.json          # Dependencies and scripts
+├── scripts/              # Deployment scripts
+└── tests/                # Test files
 ```
-
-## 🔧 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript type checking
-
-## 🚀 Deployment
-
-### Deploy to Vercel
-
-1. **Push to GitHub**: Push your code to a GitHub repository
-
-2. **Connect to Vercel**:
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Add environment variables in Vercel dashboard
-   - Deploy
-
-3. **Environment Variables in Vercel**:
-   - Add all variables from your `.env.local` file
-   - Update `NEXT_PUBLIC_APP_URL` to your Vercel domain
-
-### Deploy to Supabase
-
-1. **Database**: Your Supabase database is already deployed
-2. **Edge Functions**: Deploy any edge functions to Supabase
-3. **Storage**: Configure storage buckets if needed
-
-### Production Checklist
-
-- [ ] Set up custom domain
-- [ ] Configure SSL certificates
-- [ ] Set up monitoring and analytics
-- [ ] Configure backup strategies
-- [ ] Set up CI/CD pipelines
-- [ ] Test all features thoroughly
-- [ ] Set up error tracking (Sentry, etc.)
-- [ ] Configure email service for notifications
 
 ## 🔒 Security Features
 
-- **Row Level Security (RLS)**: Database-level security policies
-- **JWT Authentication**: Secure token-based authentication
-- **Input Validation**: Comprehensive form validation with Zod
-- **SQL Injection Protection**: Parameterized queries
-- **XSS Protection**: Content Security Policy headers
-- **CSRF Protection**: Built-in Next.js protection
-- **Rate Limiting**: API rate limiting (implement as needed)
+### Authentication & Authorization
+- **JWT-based authentication** with Supabase Auth
+- **Role-based access control** (Borrower/Lender)
+- **Session management** with automatic token refresh
+- **Password validation** and secure storage
+
+### Data Protection
+- **Row Level Security (RLS)** policies on all tables
+- **Input validation** with Zod schemas
+- **SQL injection prevention** with parameterized queries
+- **CORS protection** and security headers
+
+### API Security
+- **Rate limiting** on API endpoints
+- **Request validation** and sanitization
+- **Error handling** without sensitive data exposure
+- **HTTPS enforcement** in production
 
 ## 📊 Monitoring & Analytics
 
-### Recommended Tools
-- **Error Tracking**: Sentry
-- **Analytics**: Google Analytics, Mixpanel
-- **Performance**: Vercel Analytics
-- **Uptime**: UptimeRobot, Pingdom
-- **Logs**: Supabase Logs, Vercel Logs
+### Built-in Monitoring
+- **Error tracking** with detailed logging
+- **Performance monitoring** for API endpoints
+- **Database query optimization** with indexes
+- **Real-time user activity** tracking
+
+### Analytics Integration
+- **User behavior tracking** (optional)
+- **Financial metrics** and reporting
+- **Loan performance** analytics
+- **Credit score trends** analysis
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit your changes**: `git commit -m 'Add amazing feature'`
+4. **Push to the branch**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
 
-## 📝 License
+### Development Guidelines
+- Follow TypeScript best practices
+- Write tests for new features
+- Update documentation as needed
+- Follow the existing code style
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-If you encounter any issues or have questions:
+### Getting Help
+- **Documentation**: Check this README and inline code comments
+- **Issues**: Create an issue on GitHub for bugs or feature requests
+- **Discussions**: Use GitHub Discussions for questions and ideas
 
-1. Check the [Issues](https://github.com/your-repo/issues) page
-2. Create a new issue with detailed information
-3. Contact support at support@p2plending.com
+### Common Issues
 
-## 🔮 Roadmap
+#### Database Connection Issues
+```bash
+# Check Supabase status
+supabase status
 
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics dashboard
-- [ ] AI-powered risk assessment
-- [ ] Integration with traditional banks
-- [ ] Cryptocurrency support
-- [ ] International expansion
-- [ ] Advanced portfolio management tools
-- [ ] Social lending features
+# Restart Supabase
+supabase stop && supabase start
+```
 
-## 📄 License
+#### Build Errors
+```bash
+# Clear Next.js cache
+rm -rf .next
 
-MIT License - see [LICENSE](LICENSE) file for details.
+# Reinstall dependencies
+rm -rf node_modules && npm install
+```
+
+#### Environment Variables
+Make sure all required environment variables are set in `.env.local` and your deployment platform.
+
+## 🚀 Production Checklist
+
+Before deploying to production, ensure:
+
+- [ ] All environment variables are configured
+- [ ] Database migrations are applied
+- [ ] Edge Functions are deployed
+- [ ] SSL certificates are configured
+- [ ] Monitoring is set up
+- [ ] Backup strategy is in place
+- [ ] Security policies are reviewed
+- [ ] Performance testing is completed
+
+## 🔮 Future Roadmap
+
+### Planned Features
+- **Mobile App**: React Native application
+- **Advanced Analytics**: Machine learning for risk assessment
+- **Payment Integration**: Stripe/Razorpay integration
+- **Multi-language Support**: Internationalization
+- **Advanced Notifications**: Push notifications and SMS
+- **API Documentation**: OpenAPI/Swagger documentation
+
+### Performance Improvements
+- **Caching Strategy**: Redis integration for better performance
+- **CDN Integration**: Global content delivery
+- **Database Optimization**: Advanced indexing and query optimization
+- **Image Optimization**: Automatic image compression and optimization
 
 ---
 
-**Note**: This is a production-ready application but should be thoroughly tested and customized for your specific use case before deploying to production. Always follow security best practices and comply with local financial regulations.
+**Built with ❤️ using Next.js, Supabase, and TypeScript**

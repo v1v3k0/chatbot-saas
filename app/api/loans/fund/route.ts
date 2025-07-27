@@ -22,21 +22,14 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Get user profile to check role
+    // Verify user is a lender
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
     
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      )
-    }
-    
-    if (userProfile.role !== 'lender') {
+    if (profileError || userProfile?.role !== 'lender') {
       return NextResponse.json(
         { error: 'Only lenders can fund loans' },
         { status: 403 }
@@ -65,24 +58,31 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Check if user is trying to fund their own loan
+    // Check if lender is trying to fund their own loan
     if (loanRequest.borrower_id === user.id) {
       return NextResponse.json(
-        { error: 'You cannot fund your own loan' },
+        { error: 'Cannot fund your own loan' },
         { status: 400 }
       )
     }
     
     // Check if funding amount is valid
-    const remainingAmount = loanRequest.principal_amount - loanRequest.funded_amount
+    const remainingAmount = loanRequest.principal_amount - (loanRequest.funded_amount || 0)
     if (validatedData.amount > remainingAmount) {
       return NextResponse.json(
-        { error: `Maximum funding amount is $${remainingAmount}` },
+        { error: `Funding amount exceeds remaining loan amount of $${remainingAmount.toFixed(2)}` },
         { status: 400 }
       )
     }
     
-    // Start transaction
+    if (validatedData.amount <= 0) {
+      return NextResponse.json(
+        { error: 'Funding amount must be greater than 0' },
+        { status: 400 }
+      )
+    }
+    
+    // Create funding record
     const { data: funding, error: fundingError } = await supabase
       .from('loan_fundings')
       .insert({
@@ -101,8 +101,8 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Update loan request funded amount
-    const newFundedAmount = loanRequest.funded_amount + validatedData.amount
+    // Update loan request funded amount and status
+    const newFundedAmount = (loanRequest.funded_amount || 0) + validatedData.amount
     const newStatus = newFundedAmount >= loanRequest.principal_amount ? 'fully_funded' : 'partially_funded'
     
     const { error: updateError } = await supabase
@@ -133,7 +133,8 @@ export async function POST(request: NextRequest) {
         status: 'completed',
         metadata: {
           loan_request_id: validatedData.loanRequestId,
-          loan_title: loanRequest.title,
+          borrower_id: loanRequest.borrower_id,
+          interest_rate: loanRequest.interest_rate,
         },
       })
     
@@ -141,30 +142,48 @@ export async function POST(request: NextRequest) {
     await supabase
       .from('users')
       .update({
-        total_lent: userProfile.total_lent + validatedData.amount,
+        total_lent: (userProfile.total_lent || 0) + validatedData.amount,
       })
       .eq('id', user.id)
+    
+    // Update borrower's total borrowed amount
+    await supabase
+      .from('users')
+      .update({
+        total_borrowed: (loanRequest.borrower?.total_borrowed || 0) + validatedData.amount,
+      })
+      .eq('id', loanRequest.borrower_id)
     
     // Create notification for borrower
     await supabase
       .from('notifications')
       .insert({
         user_id: loanRequest.borrower_id,
-        title: 'Loan Funding Update',
-        message: `Your loan "${loanRequest.title}" received $${validatedData.amount} in funding.`,
+        title: 'Loan Funded',
+        message: `Your loan "${loanRequest.title}" has been funded with $${validatedData.amount.toFixed(2)}.`,
         type: 'success',
         action_url: `/loans/${validatedData.loanRequestId}`,
       })
     
-    return NextResponse.json(
-      { 
-        message: 'Loan funded successfully',
-        funding,
-        newStatus,
-        fundingProgress: calculateFundingProgress(newFundedAmount, loanRequest.principal_amount)
-      },
-      { status: 201 }
-    )
+    // If loan is fully funded, create notification
+    if (newStatus === 'fully_funded') {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: loanRequest.borrower_id,
+          title: 'Loan Fully Funded',
+          message: `Congratulations! Your loan "${loanRequest.title}" has been fully funded.`,
+          type: 'success',
+          action_url: `/loans/${validatedData.loanRequestId}`,
+        })
+    }
+    
+    return NextResponse.json({
+      message: 'Loan funded successfully',
+      funding,
+      newStatus,
+      fundingProgress: calculateFundingProgress(newFundedAmount, loanRequest.principal_amount)
+    })
     
   } catch (error: any) {
     console.error('Fund loan error:', error)
